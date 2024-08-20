@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { ethers } from 'ethers';
 
 // Replace with actual ERC20 ABI
@@ -61,95 +60,104 @@ const TokenWatchList = () => {
         for (const token of tokens) {
             try {
                 const response = await fetch('http://localhost:5000/getBalance', {
-              method: 'GET',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                chain: '0x1', // Ethereum Mainnet
-                address: '0x3a5FB222EF77e7Dd413a30b317F23D99031b69ff', // Replace with actual wallet address
-                tokenAddress: tokenAddresses[1][token.symbol],
-              }),
-            });
- 
-            const data = await response.json();
-      
-            if (response.ok) {
-              const balance = data[0]?.balance || '0';
-              updatedBalances[token.symbol] = ethers.utils.formatUnits(balance, data[0]?.decimals || 18);
-            } else {
-              updatedBalances[token.symbol] = 'Error';
-              errors[token.symbol] = 'Failed to fetch balance';
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        chain: '0x1', // Ethereum Mainnet
+                        address: '0x3a5FB222EF77e7Dd413a30b317F23D99031b69ff', // Replace with actual wallet address
+                        tokenAddress: tokenAddresses[1][token.symbol],
+                    }),
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    const balance = data[0]?.balance || '0';
+                    updatedBalances[token.symbol] = ethers.utils.formatUnits(balance, data[0]?.decimals || 18);
+                } else {
+                    updatedBalances[token.symbol] = 'Error';
+                    errors[token.symbol] = 'Failed to fetch balance';
+                }
+            } catch (error) {
+                console.error(`Failed to fetch balance for ${token.symbol}:`, error);
+                updatedBalances[token.symbol] = 'Error';
+                errors[token.symbol] = 'Failed to fetch balance';
             }
-          } catch (error) {
-            console.error(`Failed to fetch balance for ${token.symbol}:`, error);
-            updatedBalances[token.symbol] = 'Error';
-            errors[token.symbol] = 'Failed to fetch balance';
-          }
         }
-      
+
         setBalances(updatedBalances);
         setTokenErrors(errors);
-      };
-      
+    };
 
     const handleAddToken = async () => {
-      if (!newToken) return;
-      const symbol = newToken.toUpperCase();
-      const address = tokenAddresses[1][symbol]; // Use Ethereum Mainnet chain ID
-  
-      if (!address) {
-        setError('Token does not exist or symbol is incorrect');
-        return;
-      }
-  
-      if (tokens.find(token => token.symbol === symbol)) {
-        setError('Token already added');
-        return;
-      }
-  
-      setTokens([...tokens, { symbol }]);
-      setNewToken('');
-      setError('');
+        if (!newToken) return;
+        const symbol = newToken.toUpperCase();
+        const address = tokenAddresses[1][symbol]; // Use Ethereum Mainnet chain ID
+
+        if (!address) {
+            setError('Token does not exist or symbol is incorrect');
+            return;
+        }
+
+        if (tokens.find(token => token.symbol === symbol)) {
+            setError('Token already added');
+            return;
+        }
+
+        setTokens([...tokens, { symbol }]);
+        setNewToken('');
+        setError('');
     };
-  
+
+    const handleRemoveToken = (symbol) => {
+        setTokens(tokens.filter(token => token.symbol !== symbol));
+    };
+
     return (
-      <div className="p-4 bg-gray-800 text-white">
-        <div className="mb-4 flex items-center">
-          <input
-            type="text"
-            placeholder="Add token by symbol"
-            value={newToken}
-            onChange={(e) => setNewToken(e.target.value)}
-            className="mr-2 p-2 border border-gray-400 rounded bg-gray-700 text-white"
-          />
-          <button
-            onClick={handleAddToken}
-            className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
-          >
-            Add Token
-          </button>
-          {error && <p className="ml-4 text-red-500">{error}</p>}
+        <div className="p-4 bg-gray-800 text-white">
+            <div className="mb-4 flex items-center">
+                <input
+                    type="text"
+                    placeholder="Add token by symbol"
+                    value={newToken}
+                    onChange={(e) => setNewToken(e.target.value)}
+                    className="mr-2 p-2 border border-gray-400 rounded bg-gray-700 text-white"
+                />
+                <button
+                    onClick={handleAddToken}
+                    className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+                >
+                    Add Token
+                </button>
+                {error && <p className="ml-4 text-red-500">{error}</p>}
+            </div>
+
+            <ul>
+                {tokens.length === 0 ? (
+                    <p className="text-gray-500">No tokens added.</p>
+                ) : (
+                    tokens.map((token, index) => (
+                        <li key={index} className="mb-2 flex items-center justify-between">
+                            <div className="flex items-center">
+                                <span className="font-bold mr-2">{token.symbol}</span>
+                                <span className="text-sm">
+                                    {tokenErrors[token.symbol] || balances[token.symbol] || 'Loading...'}
+                                </span>
+                            </div>
+                            <button
+                                onClick={() => handleRemoveToken(token.symbol)}
+                                className="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded"
+                            >
+                                Remove
+                            </button>
+                        </li>
+                    ))
+                )}
+            </ul>
         </div>
-  
-        <ul>
-          {tokens.length === 0 ? (
-            <p className="text-gray-500">No tokens added.</p>
-          ) : (
-            tokens.map((token, index) => (
-              <li key={index} className="mb-2">
-                <div className="flex justify-between items-center">
-                  <span className="font-bold">{token.symbol}</span>
-                  <span>
-                    {tokenErrors[token.symbol] || balances[token.symbol] || 'Loading...'}
-                  </span>
-                </div>
-              </li>
-            ))
-          )}
-        </ul>
-      </div>
     );
-  };
-  
-  export default TokenWatchList;
+};
+
+export default TokenWatchList;
