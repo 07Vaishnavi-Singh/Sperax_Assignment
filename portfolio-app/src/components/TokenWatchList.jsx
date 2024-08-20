@@ -15,8 +15,8 @@ const ERC20_ABI = [
     "function decimals() view returns (uint8)",
     "function name() view returns (string)",
     "function symbol() view returns (string)"
-  ];
-  
+];
+
 // Hardcoded token addresses for Ethereum Mainnet
 const tokenAddresses = {
     1: { // Ethereum Mainnet
@@ -39,52 +39,60 @@ const tokenAddresses = {
       '1INCH': '0x111111111117dC0aa78b770fA6A738034120C302',
       'GRT': '0x7fA3b1464BF1E2D3d8F1dDE5B6394472C29F6A6B'
     },
-  };
-  
- 
+};
+
 const TokenWatchList = () => {
     const [tokens, setTokens] = useState([]);
     const [newToken, setNewToken] = useState('');
     const [balances, setBalances] = useState({});
     const [error, setError] = useState('');
     const [tokenErrors, setTokenErrors] = useState({});
-  
-    // Replace with your Ethereum provider URL
-    const provider = new ethers.providers.JsonRpcProvider('https://mainnet.infura.io/v3/YOUR_INFURA_PROJECT_ID');
-  
-    const fetchBalances = async () => {
-      const updatedBalances = {};
-      const errors = {};
-      const chainId = 1; // Ethereum Mainnet chain ID
-      for (const token of tokens) {
-        try {
-          const address = tokenAddresses[chainId][token.symbol];
-          if (!address) {
-            errors[token.symbol] = 'Token does not exist or symbol is incorrect';
-            updatedBalances[token.symbol] = 'Error';
-            continue;
-          }
-  
-          const contract = new ethers.Contract(address, ERC20_ABI, provider);
-          const balance = await contract.balanceOf('0xYourWalletAddressHere'); // Replace with actual wallet address
-          const decimals = await contract.decimals();
-          updatedBalances[token.symbol] = ethers.utils.formatUnits(balance, decimals);
-        } catch (error) {
-          console.error(`Failed to fetch balance for ${token.symbol}:`, error);
-          updatedBalances[token.symbol] = 'Error';
-          errors[token.symbol] = 'Failed to fetch balance';
-        }
-      }
-      setBalances(updatedBalances);
-      setTokenErrors(errors);
-    };
-  
+
     useEffect(() => {
-      if (tokens.length > 0) {
-        fetchBalances();
-      }
+        if (tokens.length > 0) {
+            fetchBalances();
+        }
     }, [tokens]);
-  
+
+    const fetchBalances = async () => {
+        const updatedBalances = {};
+        const errors = {};
+
+        for (const token of tokens) {
+            try {
+                const response = await fetch('http://localhost:5000/getBalance', {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                chain: '0x1', // Ethereum Mainnet
+                address: '0x3a5FB222EF77e7Dd413a30b317F23D99031b69ff', // Replace with actual wallet address
+                tokenAddress: tokenAddresses[1][token.symbol],
+              }),
+            });
+ 
+            const data = await response.json();
+      
+            if (response.ok) {
+              const balance = data[0]?.balance || '0';
+              updatedBalances[token.symbol] = ethers.utils.formatUnits(balance, data[0]?.decimals || 18);
+            } else {
+              updatedBalances[token.symbol] = 'Error';
+              errors[token.symbol] = 'Failed to fetch balance';
+            }
+          } catch (error) {
+            console.error(`Failed to fetch balance for ${token.symbol}:`, error);
+            updatedBalances[token.symbol] = 'Error';
+            errors[token.symbol] = 'Failed to fetch balance';
+          }
+        }
+      
+        setBalances(updatedBalances);
+        setTokenErrors(errors);
+      };
+      
+
     const handleAddToken = async () => {
       if (!newToken) return;
       const symbol = newToken.toUpperCase();
