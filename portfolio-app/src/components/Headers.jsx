@@ -39,48 +39,53 @@ const Headers = () => {
   };
 
   return (
-    <div className="flex justify-between items-center p-4 bg-gray-800 text-white">
-      
-      {/* Address Input on the Left */}
+    <header className="bg-gray-900 text-white py-4 px-6 flex justify-between items-center">
       <div className="flex items-center">
-        <input
-          type="text"
-          placeholder="Enter wallet address"
-          value={walletAddress}
-          onChange={handleInputChange}
-          className={`mr-2 p-2 border border-gray-400 rounded bg-gray-700 text-white ${!isAddressValid ? 'border-red-500' : ''}`}
-        />
-        <button 
-          onClick={validateAddress}
-          className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
-        >
-          Submit Address
-        </button>
-        {!isAddressValid && <span className="text-red-500 ml-2">Invalid Address</span>}
+        <h1 className="text-2xl font-bold mr-4">Crypto Portfolio</h1>
+        <div className="flex items-center">
+          <input
+            type="text"
+            placeholder="Enter wallet address"
+            value={walletAddress}
+            onChange={handleInputChange}
+            className={`mr-2 px-3 py-2 border border-gray-600 rounded bg-gray-800 text-white focus:outline-none focus:border-blue-500 ${
+              !isAddressValid ? 'border-red-500' : ''
+            }`}
+          />
+          <button
+            onClick={validateAddress}
+            className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded focus:outline-none"
+          >
+            Submit Address
+          </button>
+          {!isAddressValid && (
+            <span className="text-red-500 ml-2">Invalid Address</span>
+          )}
+        </div>
       </div>
-      
-      {/* Wallet Connect/Disconnect Buttons on the Right */}
-      <div className="flex items-center space-x-4">
+      <div className="flex items-center">
         {connectedWallet ? (
           <>
-            <span className="text-green-500 font-bold">{connectedWallet}</span>
-            <button 
-              onClick={disconnectWallet} 
-              className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
+            <span className="text-green-500 font-bold mr-4">
+              {connectedWallet.slice(0, 6)}...{connectedWallet.slice(-4)}
+            </span>
+            <button
+              onClick={disconnectWallet}
+              className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded focus:outline-none"
             >
-              Disconnect Wallet
+              Disconnect
             </button>
           </>
         ) : (
-          <button 
-            onClick={connectWallet} 
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+          <button
+            onClick={connectWallet}
+            className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded focus:outline-none"
           >
             Connect Wallet
           </button>
         )}
       </div>
-    </div>
+    </header>
   );
 };
 
