@@ -2,26 +2,141 @@ import React, { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
 
 // Replace with actual ERC20 ABI
-const ERC20_ABI = [
-    "function totalSupply() view returns (uint256)",
-    "function balanceOf(address owner) view returns (uint256)",
-    "function transfer(address to, uint256 value) returns (bool)",
-    "function allowance(address owner, address spender) view returns (uint256)",
-    "function approve(address spender, uint256 value) returns (bool)",
-    "function transferFrom(address from, address to, uint256 value) returns (bool)",
-    "event Transfer(address indexed from, address indexed to, uint256 value)",
-    "event Approval(address indexed owner, address indexed spender, uint256 value)",
-    "function decimals() view returns (uint8)",
-    "function name() view returns (string)",
-    "function symbol() view returns (string)"
-];
+const ERC20_ABI = 
+    [
+        {
+          "constant": true,
+          "inputs": [],
+          "name": "name",
+          "outputs": [{"name": "", "type": "string"}],
+          "type": "function"
+        },
+        {
+          "constant": true,
+          "inputs": [],
+          "name": "symbol",
+          "outputs": [{"name": "", "type": "string"}],
+          "type": "function"
+        },
+        {
+          "constant": true,
+          "inputs": [],
+          "name": "decimals",
+          "outputs": [{"name": "", "type": "uint8"}],
+          "type": "function"
+        },
+        {
+          "constant": true,
+          "inputs": [],
+          "name": "totalSupply",
+          "outputs": [{"name": "", "type": "uint256"}],
+          "type": "function"
+        },
+        {
+          "constant": true,
+          "inputs": [{"name": "_owner", "type": "address"}],
+          "name": "balanceOf",
+          "outputs": [{"name": "balance", "type": "uint256"}],
+          "type": "function"
+        },
+        {
+          "constant": false,
+          "inputs": [{"name": "_to", "type": "address"}, {"name": "_value", "type": "uint256"}],
+          "name": "transfer",
+          "outputs": [{"name": "", "type": "bool"}],
+          "type": "function"
+        },
+        {
+          "constant": false,
+          "inputs": [{"name": "_from", "type": "address"}, {"name": "_to", "type": "address"}, {"name": "_value", "type": "uint256"}],
+          "name": "transferFrom",
+          "outputs": [{"name": "", "type": "bool"}],
+          "type": "function"
+        },
+        {
+          "constant": false,
+          "inputs": [{"name": "_spender", "type": "address"}, {"name": "_value", "type": "uint256"}],
+          "name": "approve",
+          "outputs": [{"name": "", "type": "bool"}],
+          "type": "function"
+        },
+        {
+          "constant": true,
+          "inputs": [{"name": "_owner", "type": "address"}, {"name": "_spender", "type": "address"}],
+          "name": "allowance",
+          "outputs": [{"name": "", "type": "uint256"}],
+          "type": "function"
+        },
+        {
+          "anonymous": false,
+          "inputs": [{"indexed": true, "name": "from", "type": "address"}, {"indexed": true, "name": "to", "type": "address"}, {"indexed": false, "name": "value", "type": "uint256"}],
+          "name": "Transfer",
+          "type": "event"
+        },
+        {
+          "anonymous": false,
+          "inputs": [{"indexed": true, "name": "owner", "type": "address"}, {"indexed": true, "name": "spender", "type": "address"}, {"indexed": false, "name": "value", "type": "uint256"}],
+          "name": "Approval",
+          "type": "event"
+        },
+        {
+          "constant": false,
+          "inputs": [{"name": "_spender", "type": "address"}, {"name": "_value", "type": "uint256"}, {"name": "_extraData", "type": "bytes"}],
+          "name": "approveAndCall",
+          "outputs": [{"name": "success", "type": "bool"}],
+          "type": "function"
+        },
+        {
+          "constant": false,
+          "inputs": [{"name": "_amount", "type": "uint256"}],
+          "name": "burn",
+          "outputs": [{"name": "success", "type": "bool"}],
+          "type": "function"
+        },
+        {
+          "constant": false,
+          "inputs": [{"name": "_from", "type": "address"}, {"name": "_amount", "type": "uint256"}],
+          "name": "burnFrom",
+          "outputs": [{"name": "success", "type": "bool"}],
+          "type": "function"
+        },
+        {
+          "constant": false,
+          "inputs": [{"name": "_to", "type": "address"}, {"name": "_amount", "type": "uint256"}],
+          "name": "mint",
+          "outputs": [{"name": "success", "type": "bool"}],
+          "type": "function"
+        },
+        {
+          "constant": false,
+          "inputs": [],
+          "name": "pause",
+          "outputs": [],
+          "type": "function"
+        },
+        {
+          "constant": false,
+          "inputs": [],
+          "name": "unpause",
+          "outputs": [],
+          "type": "function"
+        },
+        {
+          "constant": true,
+          "inputs": [],
+          "name": "paused",
+          "outputs": [{"name": "", "type": "bool"}],
+          "type": "function"
+        }
+      ];
+
 
 // Hardcoded token addresses for Ethereum Mainnet
 const tokenAddresses = {
     1: { // Ethereum Mainnet
         'ETH': '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
         'DAI': '0x6B175474E89094C44Da98b954EedeAC495271d0F',
-        'USDC': '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+        'USDC': '0xaf88d065e77c8cc2239327c5edb3a432268e5831',
         'USDT': '0xdac17f958d2ee523a2206206994597c13d831ec7',
         'UNI': '0x5C69b1c8D2f817c04D7D8a7d529b08Bf16c4b65',
         'LINK': '0x514910771af9ca656af840dff83e8264ecf986ca',
@@ -61,7 +176,7 @@ const TokenWatchList = () => {
 
         for (const token of tokens) {
             try {
-                const provider = new ethers.providers.JsonRpcProvider('https://rpc.ankr.com/eth');
+                const provider = new ethers.providers.JsonRpcProvider('https://rpc.ankr.com/eth/150aa8fab13e61e50ba49ac1cd0c06e26ae190e4c907691044886fdda314bfb6');
                 const tokenContract = new ethers.Contract(tokenAddresses[1][token.symbol], ERC20_ABI, provider);
                 const balance = await tokenContract.balanceOf(walletAddress);
                 const decimals = await tokenContract.decimals();
