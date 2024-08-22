@@ -1,44 +1,47 @@
 import React, { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 
-// Replace with actual ERC20 ABI
-const ERC20_ABI = [
-    "function totalSupply() view returns (uint256)",
-    "function balanceOf(address owner) view returns (uint256)",
-    "function transfer(address to, uint256 value) returns (bool)",
-    "function allowance(address owner, address spender) view returns (uint256)",
-    "function approve(address spender, uint256 value) returns (bool)",
-    "function transferFrom(address from, address to, uint256 value) returns (bool)",
-    "event Transfer(address indexed from, address indexed to, uint256 value)",
-    "event Approval(address indexed owner, address indexed spender, uint256 value)",
-    "function decimals() view returns (uint8)",
-    "function name() view returns (string)",
-    "function symbol() view returns (string)"
-];
-
-// Hardcoded token addresses for Ethereum Mainnet
+// Make sure to define or import this object
 const tokenAddresses = {
-    1: { // Ethereum Mainnet
-        'ETH': '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
-        'DAI': '0x6B175474E89094C44Da98b954EedeAC495271d0F',
-        'USDC': '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
-        'USDT': '0xdac17f958d2ee523a2206206994597c13d831ec7',
-        'UNI': '0x5C69b1c8D2f817c04D7D8a7d529b08Bf16c4b65',
-        'LINK': '0x514910771af9ca656af840dff83e8264ecf986ca',
-        'WBTC': '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599',
-        'MKR': '0xA1Ff1A1f5F19A2a6Bfcd8D6Be3a8c545E74B67F2',
-        'SUSHI': '0x6b3595068778dd592e39a122f4f5a5f9b6a26f83',
-        'BAT': '0x0D8775F648430679A709E98d2b0Cb6250d2887EF',
-        'COMP': '0xc00e94cb662c3520282e6f5717214004a7f26888',
-        'AAVE': '0x7FcF7D2C702BF9e062eD8AB7A7cBEf7a18D8D848',
-        'CRV': '0xD533a949740bb3306d119CC777fa900bA034cd52',
-        'YFI': '0x0bc529c00C6401aEF6D220BE8C6Ea1667F6c19D8',
-        'LDO': '0x5A98FcBEA516Cf06857cF2F5dC20e6d8d8d4d9d9',
-        'RUNE': '0x7C8F4348BC8d2a7d16Fbe7BC01F046bC3f007f08',
-        '1INCH': '0x111111111117dC0aa78b770fA6A738034120C302',
-        'GRT': '0x7fA3b1464BF1E2D3d8F1dDE5B6394472C29F6A6B',
-        'PUSH': '0xf418588522d5dd018b425E472991E52EBBeEEEEE'
-    },
+    1: {
+    'ETH': '0x0000000000000000000000000000000000000000', // Ethereum
+    'USDT': '0xdAC17F958D2ee523a2206206994597C13D831ec7', // Tether USD
+    'USDC': '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606EB48', // USD Coin
+    'DAI': '0x6B175474E89094C44Da98b954EedeAC495271d0F', // Dai Stablecoin
+    'WBTC': '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599', // Wrapped Bitcoin
+    'LINK': '0x514910771AF9Ca656af840dff83E8264EcF986CA', // Chainlink
+    'UNI': '0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984', // Uniswap
+    'MKR': '0x9f8F72aA9304C8B593d555F12ef6589Cc3A579A2', // Maker
+    'AAVE': '0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9', // Aave
+    'COMP': '0xc00e94Cb662C3520282E6f5717214004A7f26888', // Compound
+    'SNX': '0xC011A72400E58ecD99Ee497CF89E3775d4bd732F', // Synthetix Network Token
+    'YFI': '0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e', // yearn.finance
+    'SUSHI': '0x6B3595068778DD592e39A122f4f5a5CF09C90fE2', // SushiSwap
+    'BAL': '0xba100000625a3754423978a60c9317c58a424e3D', // Balancer
+    'BAT': '0x0D8775F648430679A709E98d2b0Cb6250d2887EF', // Basic Attention Token
+    'ZRX': '0xE41d2489571d322189246DaFA5ebDe1F4699F498', // 0x Protocol Token
+    'CRV': '0xD533a949740bb3306d119CC777fa900bA034cd52', // Curve DAO Token
+    '1INCH': '0x111111111117dC0aa78b770fA6A738034120C302', // 1inch
+    'MANA': '0x0F5D2fB29fb7d3CFeE444a200298f468908cC942', // Decentraland
+    'ENJ': '0xf629cBd94d3791C9250152BD8DfBDF380E2a3B9c', // EnjinCoin
+    'PUSH':'0xf418588522d5dd018b425e472991e52ebbeeeeee'
+    }
+};
+
+const BalanceChart = ({ data, symbol }) => {
+    return (
+        <LineChart width={600} height={300} data={data}>
+            <XAxis dataKey="date" />
+            <YAxis />
+            <CartesianGrid strokeDasharray="3 3" />
+            <Tooltip />
+            <Legend />
+            <Line type="monotone" dataKey="balance" stroke="#8884d8" name={`${symbol} Balance`} />
+        </LineChart>
+    );
 };
 
 const TokenWatchList = () => {
@@ -47,7 +50,9 @@ const TokenWatchList = () => {
     const [balances, setBalances] = useState({});
     const [error, setError] = useState('');
     const [tokenErrors, setTokenErrors] = useState({});
-    const [walletAddress, setWalletAddress] = useState('0x3a5FB222EF77e7Dd413a30b317F23D99031b69ff'); // Replace with actual wallet address
+    const [walletAddress, setWalletAddress] = useState('0x3a5FB222EF77e7Dd413a30b317F23D99031b69ff');
+    const [historicalBalances, setHistoricalBalances] = useState({});
+    const [dateRange, setDateRange] = useState({ fromDate: null, toDate: null });
 
     useEffect(() => {
         if (tokens.length > 0) {
@@ -55,13 +60,19 @@ const TokenWatchList = () => {
         }
     }, [tokens, walletAddress]);
 
+    useEffect(() => {
+        if (tokens.length > 0 && dateRange.fromDate && dateRange.toDate) {
+            tokens.forEach(token => fetchHistoricalBalances(token.symbol));
+        }
+    }, [tokens, dateRange]);
+
     const fetchBalances = async () => {
         const updatedBalances = {};
         const errors = {};
 
         for (const token of tokens) {
             try {
-                const provider = new ethers.providers.JsonRpcProvider('https://rpc.ankr.com/eth');
+                const provider = new ethers.providers.JsonRpcProvider('https://rpc.ankr.com/eth/150aa8fab13e61e50ba49ac1cd0c06e26ae190e4c907691044886fdda314bfb6');
                 const tokenContract = new ethers.Contract(tokenAddresses[1][token.symbol], ERC20_ABI, provider);
                 const balance = await tokenContract.balanceOf(walletAddress);
                 const decimals = await tokenContract.decimals();
@@ -77,28 +88,89 @@ const TokenWatchList = () => {
         setTokenErrors(errors);
     };
 
+
+    const fetchHistoricalBalances = async (symbol) => {
+        if (!dateRange.fromDate || !dateRange.toDate) {
+            console.error("Invalid date range.");
+            return;
+        }
+    
+        try {
+            const params = new URLSearchParams({
+                chain: '1', // Ethereum mainnet
+                address: walletAddress,
+                tokenAddress: tokenAddresses[1][symbol],
+                symbol: symbol,
+                fromDate: dateRange.fromDate.toISOString(),
+                toDate: dateRange.toDate.toISOString()
+            });
+    
+            const response = await fetch(`/getHistoricalBalance?${params.toString()}`, {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' }
+            });
+    
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            setHistoricalBalances(prevBalances => {
+                const newBalances = {
+                    ...prevBalances,
+                    [symbol]: data
+                };
+                console.log('Updated historical balances:', newBalances);
+                return newBalances;
+            });
+        } catch (error) {
+            console.error(`Failed to fetch historical balances for ${symbol}:`, error);
+            setTokenErrors(prevErrors => ({
+                ...prevErrors,
+                [symbol]: `Error fetching historical data: ${error.message}`
+            }));
+        }
+    };
+
     const handleAddToken = async () => {
-        if (!newToken) return;
-        const symbol = newToken.toUpperCase();
-        const address = tokenAddresses[1][symbol]; // Use Ethereum Mainnet chain ID
-
-        if (!address) {
-            setError('Token does not exist or symbol is incorrect');
+        if (!newToken) {
+            setError('Please enter a token symbol.');
             return;
         }
 
-        if (tokens.find(token => token.symbol === symbol)) {
-            setError('Token already added');
+        const upperCaseToken = newToken.toUpperCase();
+
+        if (tokens.find(token => token.symbol === upperCaseToken)) {
+            setError('Token already added.');
             return;
         }
 
-        setTokens([...tokens, { symbol }]);
+        const tokenAddress = tokenAddresses[1][upperCaseToken];
+        if (!tokenAddress) {
+            setError('Token symbol is not recognized.');
+            return;
+        }
+
+        setTokens(prevTokens => {
+            const newTokens = [...prevTokens, { symbol: upperCaseToken }];
+            console.log('Updated tokens:', newTokens);
+            return newTokens;
+        });
         setNewToken('');
         setError('');
     };
 
     const handleRemoveToken = (symbol) => {
-        setTokens(tokens.filter(token => token.symbol !== symbol));
+        setTokens(prevTokens => prevTokens.filter(token => token.symbol !== symbol));
+        setBalances(prevBalances => {
+            const newBalances = { ...prevBalances };
+            delete newBalances[symbol];
+            return newBalances;
+        });
+        setHistoricalBalances(prevBalances => {
+            const newBalances = { ...prevBalances };
+            delete newBalances[symbol];
+            return newBalances;
+        });
     };
 
     return (
@@ -120,6 +192,26 @@ const TokenWatchList = () => {
                 </button>
                 {error && <p className="ml-4 text-red-500">{error}</p>}
             </div>
+            <div className="mb-4">
+                <DatePicker
+                    selected={dateRange.fromDate}
+                    onChange={date => setDateRange(prev => ({ ...prev, fromDate: date }))}
+                    placeholderText="From Date"
+                    className="mr-2 px-3 py-2 border border-gray-600 rounded bg-gray-800 text-white focus:outline-none focus:border-blue-500"
+                />
+                <DatePicker
+                    selected={dateRange.toDate}
+                    onChange={date => setDateRange(prev => ({ ...prev, toDate: date }))}
+                    placeholderText="To Date"
+                    className="mr-2 px-3 py-2 border border-gray-600 rounded bg-gray-800 text-white focus:outline-none focus:border-blue-500"
+                />
+                <button 
+                    onClick={() => tokens.forEach(token => fetchHistoricalBalances(token.symbol))}
+                    className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded focus:outline-none"
+                >
+                    Fetch Historical Balances
+                </button>
+            </div>
             <div className="max-h-96 overflow-y-auto">
                 {tokens.length === 0 ? (
                     <p className="text-gray-500">No tokens added.</p>
@@ -128,20 +220,25 @@ const TokenWatchList = () => {
                         {tokens.map((token, index) => (
                             <li
                                 key={index}
-                                className="flex items-center justify-between py-2 border-b border-gray-700"
+                                className="flex flex-col py-2 border-b border-gray-700"
                             >
-                                <div className="flex items-center">
-                                    <span className="font-bold mr-2">{token.symbol}</span>
-                                    <span className="text-sm">
-                                        {tokenErrors[token.symbol] || balances[token.symbol] || 'Loading...'}
-                                    </span>
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center">
+                                        <span className="font-bold mr-2">{token.symbol}</span>
+                                        <span className="text-sm">
+                                            {tokenErrors[token.symbol] || balances[token.symbol] || 'Loading...'}
+                                        </span>
+                                    </div>
+                                    <button
+                                        onClick={() => handleRemoveToken(token.symbol)}
+                                        className="bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-2 rounded focus:outline-none"
+                                    >
+                                        Remove
+                                    </button>
                                 </div>
-                                <button
-                                    onClick={() => handleRemoveToken(token.symbol)}
-                                    className="bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-2 rounded focus:outline-none"
-                                >
-                                    Remove
-                                </button>
+                                {historicalBalances[token.symbol] && (
+                                    <BalanceChart data={historicalBalances[token.symbol]} symbol={token.symbol} />
+                                )}
                             </li>
                         ))}
                     </ul>

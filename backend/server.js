@@ -29,28 +29,59 @@ app.get('/getNativeBalance', async (req, res) => {
     }
   });
 
-app.get('/getBalance', async (req, res) => {
-  const { chain, address, tokenAddress, symbol  } = req.body;
+  app.get('/getBalance', async (req, res) => {
+    const { chain, address, tokenAddress, symbol  } = req.body;
+  
+    try {
+     const response = await Moralis.EvmApi.token.getWalletTokenBalances({
+          "chain": chain,
+          "address": address
+        });
+        const tokens = response.raw;
+        const token = tokens.find(t => t.symbol.toUpperCase() === symbol.toUpperCase());
+  
+        if (token) {
+          const balance = ethers.utils.formatUnits(token.balance, token.decimals);
+          res.json({ balance });
+        } else{
+          const balance = 0;
+          res.json({balance})
+        }
+  
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: 'Failed to fetch balance' });
+    }
+  });
 
+app.get('/getHistoricalBalance', async (req, res) => {
+  const { chain, address, tokenAddress, symbol, fromDate, toDate } = req.query;
   try {
-   const response = await Moralis.EvmApi.token.getWalletTokenBalances({
-        "chain": chain,
-        "address": address
-      });
-      const tokens = response.raw;
-      const token = tokens.find(t => t.symbol.toUpperCase() === symbol.toUpperCase());
-
-      if (token) {
-        const balance = ethers.utils.formatUnits(token.balance, token.decimals);
-        res.json({ balance });
-      } else{
-        const balance = 0;
-        res.json({balance})
+    const response = await Moralis.EvmApi.token.getWalletTokenTransfers({
+      chain: chain,
+      address: address,
+      fromDate: new Date(fromDate),
+      toDate: new Date(toDate),
+    });
+        // Process the transactions to calculate historical balances
+    let balance = 0;
+    const historicalBalances = response.result.map(tx => {
+      if (tx.tokenAddress.toLowerCase() === tokenAddress.toLowerCase()) {
+        if (tx.fromAddress.toLowerCase() === address.toLowerCase()) {
+          balance -= Number(ethers.utils.formatUnits(tx.value, tx.decimals));
+        } else {
+          balance += Number(ethers.utils.formatUnits(tx.value, tx.decimals));
+        }
       }
-
+      return {
+        date: tx.blockTimestamp,
+        balance: balance
+      };
+    });
+    res.json(historicalBalances);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Failed to fetch balance' });
+    res.status(500).json({ error: 'Failed to fetch historical balances' });
   }
 });
 
