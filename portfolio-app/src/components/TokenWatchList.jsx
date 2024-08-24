@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { ethers } from 'ethers';
+import axios from 'axios';
+import { Line } from 'react-chartjs-2';
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
+
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
 // Replace with actual ERC20 ABI
 const ERC20_ABI = 
@@ -156,52 +160,43 @@ const tokenAddresses = {
     },
 };
 
+
 const TokenWatchList = () => {
     const [tokens, setTokens] = useState([]);
     const [newToken, setNewToken] = useState('');
     const [balances, setBalances] = useState({});
     const [error, setError] = useState('');
-    const [tokenErrors, setTokenErrors] = useState({});
-    const [walletAddress, setWalletAddress] = useState('0x3a5FB222EF77e7Dd413a30b317F23D99031b69ff'); // Replace with actual wallet address
+    const [selectedDate, setSelectedDate] = useState(new Date());
+    const [walletAddress, setWalletAddress] = useState('');
+    const [provider, setProvider] = useState(null);
 
     useEffect(() => {
-        if (tokens.length > 0) {
-            fetchBalances();
+        if (window.ethereum) {
+            const ethProvider = new ethers.providers.Web3Provider(window.ethereum);
+            setProvider(ethProvider);
         }
-    }, [tokens, walletAddress]);
+    }, []);
 
-    const fetchBalances = async () => {
-        const updatedBalances = {};
-        const errors = {};
-
-        for (const token of tokens) {
+    const connectWallet = async () => {
+        if (provider) {
             try {
-                const provider = new ethers.providers.JsonRpcProvider('https://rpc.ankr.com/eth/150aa8fab13e61e50ba49ac1cd0c06e26ae190e4c907691044886fdda314bfb6');
-                const tokenContract = new ethers.Contract(tokenAddresses[1][token.symbol], ERC20_ABI, provider);
-                const balance = await tokenContract.balanceOf(walletAddress);
-                const decimals = await tokenContract.decimals();
-                updatedBalances[token.symbol] = ethers.utils.formatUnits(balance, decimals);
+                await window.ethereum.request({ method: 'eth_requestAccounts' });
+                const signer = provider.getSigner();
+                const address = await signer.getAddress();
+                setWalletAddress(address);
             } catch (error) {
-                console.error(`Failed to fetch balance for ${token.symbol}:`, error);
-                updatedBalances[token.symbol] = 'Error';
-                errors[token.symbol] = 'Failed to fetch balance';
+                console.error('Failed to connect wallet:', error);
+                setError('Failed to connect wallet');
             }
+        } else {
+            setError('MetaMask not detected');
         }
-
-        setBalances(updatedBalances);
-        setTokenErrors(errors);
     };
 
-    const handleAddToken = async () => {
+    const handleAddToken = () => {
         if (!newToken) return;
         const symbol = newToken.toUpperCase();
-        const address = tokenAddresses[1][symbol]; // Use Ethereum Mainnet chain ID
-
-        if (!address) {
-            setError('Token does not exist or symbol is incorrect');
-            return;
-        }
-
+        
         if (tokens.find(token => token.symbol === symbol)) {
             setError('Token already added');
             return;
@@ -214,6 +209,46 @@ const TokenWatchList = () => {
 
     const handleRemoveToken = (symbol) => {
         setTokens(tokens.filter(token => token.symbol !== symbol));
+        const updatedBalances = { ...balances };
+        delete updatedBalances[symbol];
+        setBalances(updatedBalances);
+    };
+
+    const fetchBalances = async () => {
+        if (!provider || !walletAddress) {
+            setError('Please connect your wallet first');
+            return;
+        }
+
+        const updatedBalances = {};
+        const blockNumber = await provider.getBlockNumber(selectedDate);
+
+        for (const token of tokens) {
+            try {
+                const tokenAddress = await getTokenAddress(token.symbol);
+                if (!tokenAddress) {
+                    updatedBalances[token.symbol] = 'Address not found';
+                    continue;
+                }
+
+                const tokenContract = new ethers.Contract(tokenAddress, ERC20_ABI, provider);
+                const balance = await tokenContract.balanceOf(walletAddress, { blockTag: blockNumber });
+                const decimals = await tokenContract.decimals();
+                updatedBalances[token.symbol] = ethers.utils.formatUnits(balance, decimals);
+            } catch (error) {
+                console.error(`Failed to fetch balance for ${token.symbol}:`, error);
+                updatedBalances[token.symbol] = 'Error';
+            }
+        }
+
+        setBalances(updatedBalances);
+    };
+
+    const getTokenAddress = async (symbol) => {
+        // This function should be implemented to return the token address for a given symbol
+        // You can use a token list API or your own mapping
+        // For demonstration, we'll return null
+        return null;
     };
 
     return (
@@ -233,8 +268,27 @@ const TokenWatchList = () => {
                 >
                     Add Token
                 </button>
-                {error && <p className="ml-4 text-red-500">{error}</p>}
             </div>
+            <div className="flex items-center mb-4">
+                <DatePicker
+                    selected={selectedDate}
+                    onChange={date => setSelectedDate(date)}
+                    className="mr-2 px-3 py-2 border border-gray-600 rounded bg-gray-800 text-white focus:outline-none focus:border-blue-500"
+                />
+                <button
+                    onClick={connectWallet}
+                    className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded focus:outline-none"
+                >
+                    {walletAddress ? 'Wallet Connected' : 'Connect Wallet'}
+                </button>
+                <button
+                    onClick={fetchBalances}
+                    className="ml-2 bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded focus:outline-none"
+                >
+                    Fetch Balances
+                </button>
+            </div>
+            {error && <p className="text-red-500 mb-4">{error}</p>}
             <div className="max-h-96 overflow-y-auto">
                 {tokens.length === 0 ? (
                     <p className="text-gray-500">No tokens added.</p>
@@ -248,7 +302,7 @@ const TokenWatchList = () => {
                                 <div className="flex items-center">
                                     <span className="font-bold mr-2">{token.symbol}</span>
                                     <span className="text-sm">
-                                        {tokenErrors[token.symbol] || balances[token.symbol] || 'Loading...'}
+                                        {balances[token.symbol] || 'Not fetched'}
                                     </span>
                                 </div>
                                 <button
