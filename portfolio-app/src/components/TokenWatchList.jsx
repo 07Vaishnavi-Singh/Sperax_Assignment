@@ -31,7 +31,7 @@ const tokenAddresses = {
     }
 };
 
-// Assume tokenAddresses and ERC20_ABI are defined elsewhere
+// Assume ERC20_ABI is defined elsewhere
 
 const BalanceChart = ({ data, symbol }) => {
     return (
@@ -223,37 +223,60 @@ const TokenWatchList = () => {
     });
 
     return (
-        <div>
-            <h2>Token Watch List</h2>
-            <button onClick={connectWallet}>Connect Wallet</button>
-            <input 
-                type="text" 
-                placeholder="Enter token symbol" 
-                value={newToken} 
-                onChange={(e) => setNewToken(e.target.value)} 
-            />
-            <button onClick={handleAddToken}>Add Token</button>
-            {error && <p style={{ color: 'red' }}>{error}</p>}
-            <ul>
+        <div className="mb-8 bg-gray-900 p-6 rounded-lg shadow-lg">
+            <h2 className="text-2xl font-bold text-white mb-6">Token Watch List</h2>
+            <button 
+                onClick={connectWallet}
+                className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-bold py-2 px-6 rounded shadow-lg hover:shadow-xl transition duration-300 mb-4"
+            >
+                Connect Wallet
+            </button>
+            <div className="grid grid-cols-2 gap-4 mb-4">
+                <input 
+                    type="text" 
+                    placeholder="Enter token symbol" 
+                    value={newToken} 
+                    onChange={(e) => setNewToken(e.target.value)}
+                    className="p-3 border border-gray-700 rounded bg-gray-800 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-600"
+                />
+                <button 
+                    onClick={handleAddToken}
+                    className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold py-2 px-6 rounded shadow-lg hover:shadow-xl transition duration-300"
+                >
+                    Add Token
+                </button>
+            </div>
+            {error && <p className="text-red-400 mt-4">{error}</p>}
+            <ul className="mt-4 space-y-2">
                 {sortedTokens.map((token, index) => (
-                    <li key={index}>
+                    <li key={index} className="text-white">
                         {token.symbol}: {balances[token.symbol]} {token.symbol}
                         {tokenErrors[token.symbol] && (
-                            <p style={{ color: 'red' }}>{tokenErrors[token.symbol]}</p>
+                            <p className="text-red-400">{tokenErrors[token.symbol]}</p>
                         )}
                     </li>
                 ))}
             </ul>
-            <div>
-                <h3>Sort by:</h3>
-                <button onClick={() => handleSort('symbol')}>Symbol</button>
-                <button onClick={() => handleSort('balance')}>Balance</button>
+            <div className="mt-6">
+                <h3 className="text-xl font-bold text-white mb-2">Sort by:</h3>
+                <button 
+                    onClick={() => handleSort('symbol')}
+                    className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded mr-2"
+                >
+                    Symbol
+                </button>
+                <button 
+                    onClick={() => handleSort('balance')}
+                    className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
+                >
+                    Balance
+                </button>
             </div>
-            <div>
-                <h3>Total Value: ${totalValue.toFixed(2)}</h3>
+            <div className="mt-6">
+                <h3 className="text-xl font-bold text-white">Total Value: ${totalValue.toFixed(2)}</h3>
             </div>
-            <div>
-                <h3>Select Date Range</h3>
+            <div className="mt-6">
+                <h3 className="text-xl font-bold text-white mb-2">Select Date Range</h3>
                 <DatePicker
                     selected={dateRange.fromDate}
                     onChange={handleDateRangeChange}
@@ -261,13 +284,14 @@ const TokenWatchList = () => {
                     endDate={dateRange.toDate}
                     selectsRange
                     inline
+                    className="bg-gray-800 text-white border border-gray-700 rounded"
                 />
             </div>
-            <div>
-                <h3>Historical Balances</h3>
+            <div className="mt-6">
+                <h3 className="text-xl font-bold text-white mb-2">Historical Balances</h3>
                 {tokens.map((token, index) => (
-                    <div key={index}>
-                        <h4>{token.symbol}</h4>
+                    <div key={index} className="mt-4">
+                        <h4 className="text-lg font-semibold text-white">{token.symbol}</h4>
                         {historicalBalances[token.symbol] && (
                             <BalanceChart data={historicalBalances[token.symbol]} symbol={token.symbol} />
                         )}
